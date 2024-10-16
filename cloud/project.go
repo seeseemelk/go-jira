@@ -80,6 +80,14 @@ type PermissionScheme struct {
 	Permissions []Permission `json:"permissions" structs:"permissions,omitempty"`
 }
 
+type IssueTypesWithStatus []struct {
+	ID       string   `json:"id" structs:"id,omitempty"`
+	Name     string   `json:"name" structs:"name,omitempty"`
+	Self     string   `json:"self" structs:"self,omitempty"`
+	Subtask  bool     `json:"subtask" structs:"subtask,omitempty"`
+	Statuses []Status `json:"statuses" structs:"statuses,omitempty"`
+}
+
 // GetAll returns all projects form Jira with optional query params, like &GetQueryOptions{Expand: "issueTypes"} to get
 // a list of all projects and their supported issuetypes.
 //
@@ -160,4 +168,21 @@ func (s *ProjectService) GetPermissionScheme(ctx context.Context, projectID stri
 	}
 
 	return ps, resp, nil
+}
+
+func (s *ProjectService) GetAllStatuses(ctx context.Context, projectID string) (*IssueTypesWithStatus, *Response, error) {
+	apiEndpoint := fmt.Sprintf("/rest/api/2/project/%s/statuses", projectID)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, apiEndpoint, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	statuses := new(IssueTypesWithStatus)
+	resp, err := s.client.Do(req, statuses)
+	if err != nil {
+		jerr := NewJiraError(resp, err)
+		return nil, resp, jerr
+	}
+
+	return statuses, resp, nil
 }
